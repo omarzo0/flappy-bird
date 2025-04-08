@@ -34,6 +34,10 @@
       let birdX = boardWidth / 8;
       let birdY = boardHeight / 2;
       let birdImg;
+      let birdDeadImg; // New image for dead bird
+      let isBirdDead = false;
+      let deathRotation = 0; // For death animation
+      let deathVelocityY = 0; // For falling after death
 
       let bird = {
         x: birdX,
@@ -49,14 +53,13 @@
       let pipeX = boardWidth;
       let pipeY = 0;
       let pipeInterval;
-      let lastPipeTime = 0;
 
       let topPipeImg;
       let bottomPipeImg;
 
       // Physics
-      let velocityX = -2; // Pipes moving left speed
-      let velocityY = 0; // Bird jump speed
+      let velocityX = -2;
+      let velocityY = 0;
       let gravity = 0.4;
       let jumpForce = -6;
 
@@ -72,7 +75,10 @@
 
         // Load images
         birdImg = new Image();
-        birdImg.src = "body (3).jpeg";
+        birdImg.src = "cropped_image.png";
+
+        birdDeadImg = new Image();
+        birdDeadImg.src = "body (1).jpeg";
 
         topPipeImg = new Image();
         topPipeImg.src = "toppipe.png";
@@ -93,84 +99,82 @@
       };
 
       function startPipeInterval() {
-        // Clear existing interval if any
-        if (pipeInterval) {
-          clearInterval(pipeInterval);
-        }
-        // Start new interval
         pipeInterval = setInterval(placePipes, 1500);
-        lastPipeTime = Date.now();
       }
 
       // Game loop
       function update() {
         requestAnimationFrame(update);
-        if (gameOver) {
-          return;
-        }
         context.clearRect(0, 0, board.width, board.height);
 
-        // Bird physics
-        velocityY += gravity;
-        bird.y += velocityY;
+        if (!gameOver) {
+          // Bird physics
+          velocityY += gravity;
+          bird.y += velocityY;
 
-        // Draw bird
-        if (birdImg.complete) {
-          context.drawImage(birdImg, bird.x, bird.y, bird.width, bird.height);
-        } else {
-          // Fallback rectangle if image not loaded
-          context.fillStyle = "red";
-          context.fillRect(bird.x, bird.y, bird.width, bird.height);
-        }
+          // Draw bird
+          drawBird();
 
-        // Check boundaries
-        if (bird.y <= 0) {
-          bird.y = 0;
-          velocityY = 0;
-        }
-
-        if (bird.y + bird.height >= board.height) {
-          gameOver = true;
-        }
-
-        // Pipes
-        for (let i = 0; i < pipeArray.length; i++) {
-          let pipe = pipeArray[i];
-          pipe.x += velocityX;
-
-          if (pipe.img.complete) {
-            context.drawImage(
-              pipe.img,
-              pipe.x,
-              pipe.y,
-              pipe.width,
-              pipe.height
-            );
+          // Check boundaries
+          if (bird.y <= 0) {
+            bird.y = 0;
+            velocityY = 0;
           }
 
-          if (!pipe.passed && bird.x > pipe.x + pipe.width) {
-            score += 0.5; // 0.5 because there are 2 pipes
-            pipe.passed = true;
+          if (bird.y + bird.height >= board.height) {
+            handleCollision();
           }
 
-          if (detectCollision(bird, pipe)) {
-            gameOver = true;
+          // Pipes
+          for (let i = 0; i < pipeArray.length; i++) {
+            let pipe = pipeArray[i];
+            pipe.x += velocityX;
+
+            if (pipe.img.complete) {
+              context.drawImage(
+                pipe.img,
+                pipe.x,
+                pipe.y,
+                pipe.width,
+                pipe.height
+              );
+            }
+
+            if (!pipe.passed && bird.x > pipe.x + pipe.width) {
+              score += 0.5;
+              pipe.passed = true;
+            }
+
+            if (detectCollision(bird, pipe)) {
+              handleCollision();
+            }
           }
-        }
 
-        // Remove off-screen pipes
-        while (pipeArray.length > 0 && pipeArray[0].x < -pipeWidth) {
-          pipeArray.shift();
-        }
+          // Remove off-screen pipes
+          while (pipeArray.length > 0 && pipeArray[0].x < -pipeWidth) {
+            pipeArray.shift();
+          }
 
-        // Draw score
-        context.fillStyle = "white";
-        context.font = "45px sans-serif";
-        context.fillText(score, 5, 45);
-
-        // Game over display
-        if (gameOver) {
+          // Draw score
           context.fillStyle = "white";
+          context.font = "45px sans-serif";
+          context.fillText(score, 5, 45);
+        } else {
+          // Death animation
+          deathVelocityY += gravity;
+          bird.y += deathVelocityY;
+          deathRotation += 10; // Rotate as it falls
+
+          // Draw dead bird with rotation
+          drawDeadBird();
+
+          // Draw score
+          context.fillStyle = "white";
+          context.font = "45px sans-serif";
+          context.fillText(score, 5, 45);
+
+          // Game over display
+          context.fillStyle = "red";
           context.font = "30px sans-serif";
           context.fillText(
             "GAME OVER BODY",
@@ -179,29 +183,80 @@
           );
           context.font = "20px sans-serif";
           context.fillText(
-            "Click to try again",
-            boardWidth / 2 - 90,
+            "tani y fashla",
+            boardWidth / 1.5 - 100,
             boardHeight / 2 + 20
           );
         }
       }
 
+      function drawBird() {
+        if (birdImg.complete) {
+          context.save();
+          context.translate(bird.x + bird.width / 2, bird.y + bird.height / 2);
+
+          // Add slight rotation based on velocity for more dynamic look
+          let rotation = Math.min(Math.max(velocityY * 3, -25), 25);
+          context.rotate((rotation * Math.PI) / 180);
+
+          context.drawImage(
+            birdImg,
+            -bird.width / 2,
+            -bird.height / 2,
+            bird.width,
+            bird.height
+          );
+          context.restore();
+        } else {
+          context.fillStyle = "red";
+          context.fillRect(bird.x, bird.y, bird.width, bird.height);
+        }
+      }
+
+      function drawDeadBird() {
+        if (birdDeadImg.complete) {
+          context.save();
+          context.translate(bird.x + bird.width / 2, bird.y + bird.height / 2);
+          context.rotate((deathRotation * Math.PI) / 180);
+          context.drawImage(
+            birdDeadImg,
+            -bird.width / 2,
+            -bird.height / 2,
+            bird.width,
+            bird.height
+          );
+          context.restore();
+        } else {
+          context.save();
+          context.translate(bird.x + bird.width / 2, bird.y + bird.height / 2);
+          context.rotate((deathRotation * Math.PI) / 180);
+          context.fillStyle = "darkred";
+          context.fillRect(
+            -bird.width / 2,
+            -bird.height / 2,
+            bird.width,
+            bird.height
+          );
+          context.restore();
+        }
+      }
+
+      function handleCollision() {
+        if (!gameOver) {
+          gameOver = true;
+          isBirdDead = true;
+          deathVelocityY = 0; // Reset death fall velocity
+          clearInterval(pipeInterval);
+        }
+      }
+
       // Spawn pipes
       function placePipes() {
-        if (gameOver) {
-          return;
-        }
-
-        // Ensure proper spacing between pipes (at least 300ms since last pipe)
-        let now = Date.now();
-        if (now - lastPipeTime < 300) {
-          return;
-        }
-        lastPipeTime = now;
+        if (gameOver) return;
 
         let randomPipeY =
           pipeY - pipeHeight / 4 - Math.random() * (pipeHeight / 2);
-        let openingSpace = board.height / 3; // Increased gap
+        let openingSpace = board.height / 3;
 
         let topPipe = {
           img: topPipeImg,
@@ -227,12 +282,10 @@
       // Keyboard controls
       function moveBird(e) {
         if (e.code == "Space" || e.code == "ArrowUp" || e.code == "KeyX") {
-          // Jump
-          velocityY = jumpForce;
-
-          // Reset game if over
           if (gameOver) {
             resetGame();
+          } else {
+            velocityY = jumpForce;
           }
         }
       }
@@ -242,7 +295,6 @@
         if (gameOver) {
           resetGame();
         } else {
-          // Jump during gameplay
           velocityY = jumpForce;
         }
       }
@@ -252,6 +304,8 @@
         // Reset bird
         bird.y = birdY;
         velocityY = jumpForce;
+        isBirdDead = false;
+        deathRotation = 0;
 
         // Clear pipes
         pipeArray = [];
