@@ -35,9 +35,9 @@
       let topPipeImg;
       let bottomPipeImg;
 
-      // Bird
-      let birdWidth = 34;
-      let birdHeight = 24;
+      // Bird - Increased size
+      let birdWidth = 60; // Increased from 34
+      let birdHeight = 42; // Increased from 24 (maintaining same aspect ratio)
       let birdX = boardWidth / 8;
       let birdY = boardHeight / 2;
       let isBirdDead = false;
@@ -59,11 +59,11 @@
       let pipeY = 0;
       let pipeInterval;
 
-      // Physics
+      // Physics - Adjusted for larger bird
       let velocityX = -2;
       let velocityY = 0;
       let gravity = 0.4;
-      let jumpForce = -6;
+      let jumpForce = -7; // Slightly stronger jump for larger bird
 
       // Game state
       let gameOver = false;
@@ -81,7 +81,7 @@
         backgroundImg.src = "flappybirdbg.png";
 
         birdImg = new Image();
-        birdImg.src = "cropped_image (1).png";
+        birdImg.src = "cropped_image (4).png";
 
         birdDeadImg = new Image();
         birdDeadImg.src = "cropped_image (3).png";
@@ -212,6 +212,7 @@
           let rotation = Math.min(Math.max(velocityY * 3, -25), 25);
           context.rotate((rotation * Math.PI) / 180);
 
+          // Draw larger bird image
           context.drawImage(
             birdImg,
             -bird.width / 2,
@@ -231,6 +232,7 @@
           context.save();
           context.translate(bird.x + bird.width / 2, bird.y + bird.height / 2);
           <!-- context.rotate((deathRotation * Math.PI) / 180); -->
+          // Draw larger dead bird image
           context.drawImage(
             birdDeadImg,
             -bird.width / 2,
@@ -267,9 +269,10 @@
       function placePipes() {
         if (gameOver) return;
 
+        // Slightly larger opening space to accommodate bigger bird
         let randomPipeY =
           pipeY - pipeHeight / 4 - Math.random() * (pipeHeight / 2);
-        let openingSpace = board.height / 3;
+        let openingSpace = board.height / 2.5; // Increased from /3
 
         let topPipe = {
           img: topPipeImg,
