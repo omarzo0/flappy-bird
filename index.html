@@ -9,12 +9,12 @@
         align-items: center;
         height: 100vh;
         margin: 0;
-        background-color: #70c5ce;
+        background-color: white;
         font-family: Arial, sans-serif;
       }
       #board {
         border: 2px solid #000;
-        background-color: #70c5ce;
+        background-color: white;
       }
     </style>
   </head>
@@ -28,16 +28,21 @@
       let boardHeight = 640;
       let context;
 
+      // Images
+      let backgroundImg;
+      let birdImg;
+      let birdDeadImg;
+      let topPipeImg;
+      let bottomPipeImg;
+
       // Bird
       let birdWidth = 34;
       let birdHeight = 24;
       let birdX = boardWidth / 8;
       let birdY = boardHeight / 2;
-      let birdImg;
-      let birdDeadImg; // New image for dead bird
       let isBirdDead = false;
-      let deathRotation = 0; // For death animation
-      let deathVelocityY = 0; // For falling after death
+      let deathRotation = 0;
+      let deathVelocityY = 0;
 
       let bird = {
         x: birdX,
@@ -54,15 +59,13 @@
       let pipeY = 0;
       let pipeInterval;
 
-      let topPipeImg;
-      let bottomPipeImg;
-
       // Physics
       let velocityX = -2;
       let velocityY = 0;
       let gravity = 0.4;
       let jumpForce = -6;
 
+      // Game state
       let gameOver = false;
       let score = 0;
 
@@ -74,11 +77,14 @@
         context = board.getContext("2d");
 
         // Load images
+        backgroundImg = new Image();
+        backgroundImg.src = "flappybirdbg.png";
+
         birdImg = new Image();
-        birdImg.src = "cropped_image.png";
+        birdImg.src = "cropped_image (1).png";
 
         birdDeadImg = new Image();
-        birdDeadImg.src = "body (1).jpeg";
+        birdDeadImg.src = "cropped_image (3).png";
 
         topPipeImg = new Image();
         topPipeImg.src = "toppipe.png";
@@ -105,7 +111,14 @@
       // Game loop
       function update() {
         requestAnimationFrame(update);
-        context.clearRect(0, 0, board.width, board.height);
+
+        // Draw background
+        if (backgroundImg.complete) {
+          context.drawImage(backgroundImg, 0, 0, board.width, board.height);
+        } else {
+          context.fillStyle = "#70c5ce";
+          context.fillRect(0, 0, board.width, board.height);
+        }
 
         if (!gameOver) {
           // Bird physics
@@ -163,7 +176,7 @@
           // Death animation
           deathVelocityY += gravity;
           bird.y += deathVelocityY;
-          deathRotation += 10; // Rotate as it falls
+          deathRotation += 10;
 
           // Draw dead bird with rotation
           drawDeadBird();
@@ -195,7 +208,7 @@
           context.save();
           context.translate(bird.x + bird.width / 2, bird.y + bird.height / 2);
 
-          // Add slight rotation based on velocity for more dynamic look
+          // Add rotation based on velocity
           let rotation = Math.min(Math.max(velocityY * 3, -25), 25);
           context.rotate((rotation * Math.PI) / 180);
 
@@ -217,7 +230,7 @@
         if (birdDeadImg.complete) {
           context.save();
           context.translate(bird.x + bird.width / 2, bird.y + bird.height / 2);
-          context.rotate((deathRotation * Math.PI) / 180);
+          <!-- context.rotate((deathRotation * Math.PI) / 180); -->
           context.drawImage(
             birdDeadImg,
             -bird.width / 2,
@@ -245,7 +258,7 @@
         if (!gameOver) {
           gameOver = true;
           isBirdDead = true;
-          deathVelocityY = 0; // Reset death fall velocity
+          deathVelocityY = 0;
           clearInterval(pipeInterval);
         }
       }
